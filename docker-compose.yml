@@ -1,0 +1,57 @@
+version: '3.0'
+
+services:
+  trello:
+    container_name: trello
+    build:
+      context: ./trello
+    env_file:
+      - trello/src/common/envs/.env
+    environment:
+      - POSTGRES_HOST=postgres
+      - NOTIFIER_URL=http://notifier:5000
+    volumes:
+      - ./trello:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    command: npm run start:dev
+    depends_on:
+      - postgres
+      - notifier
+      - maildev
+    restart: always
+  postgres:
+    container_name: postgres
+    image: postgres
+    env_file:
+      - trello/src/common/envs/.env
+    environment:
+      - POSTGRES_HOST=postgres
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./trello:/var/lib/postgresql/data
+    restart: always
+  notifier:
+    container_name: notifier
+    build:
+      context: ./notifier
+    env_file:
+      - notifier/src/common/envs/.env
+    environment:
+      - EMAIL_HOST=maildev
+      - EMAIL_PORT=1025
+    volumes:
+      - ./notifier:/app
+      - /app/node_modules
+    ports:
+      - "5000:5000"
+    command: npm run start:dev
+    restart: always
+  maildev:
+    container_name: maildev
+    image: maildev/maildev
+    ports:
+      - "1080:1080"
