@@ -20,6 +20,7 @@ services:
       - postgres
       - notifier
       - maildev
+      - rabbitmq
     restart: always
   postgres:
     container_name: postgres
@@ -49,9 +50,18 @@ services:
     ports:
       - "5000:5000"
     command: npm run start:dev
+    depends_on:
+      - maildev
+      - rabbitmq
     restart: always
   maildev:
     container_name: maildev
     image: maildev/maildev
     ports:
       - "1080:1080"
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq
+    ports:
+      - "5672:5672"
+      - "8080:15672"

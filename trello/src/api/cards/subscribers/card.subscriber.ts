@@ -1,16 +1,16 @@
 import { Connection, EntitySubscriberInterface, UpdateEvent } from 'typeorm';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/typeorm';
-import { NotifierService } from '../../../modules/notifier.service';
 import { Card } from '../entities/card.entity';
 import { UsersService } from '../../users/users.service';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class CardSubscriber implements EntitySubscriberInterface<Card> {
   constructor(
     @InjectConnection() readonly connection: Connection,
-    private readonly notifierService: NotifierService,
     private readonly userService: UsersService,
+    @Inject('TRELLO_SERVICE') private readonly client: ClientProxy,
   ) {
     connection.subscribers.push(this);
   }
@@ -23,7 +23,7 @@ export class CardSubscriber implements EntitySubscriberInterface<Card> {
     const users = await this.userService.findAll();
     const emails = users.map((u) => u.email);
 
-    this.notifierService.sendNotification({
+    this.client.emit('notification', {
       message: `AFTER CARD UPDATED: ${JSON.stringify(event.entity)}`,
       emails: emails,
     });
